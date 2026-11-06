@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Veggie Recipe Finder</title>
+<style>
+  :root {
+    --bg:#f5f7f2; --card:#ffffff; --ink:#18241a; --muted:#66756a; --line:#e3e9df;
+    --accent:#2e7d32; --accent-2:#8bc34a; --accent-ink:#fff; --shadow:0 1px 2px #0001, 0 6px 18px #1b3a1f14;
+    --hero1:#e6f4e1; --hero2:#f5f7f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0f1511; --card:#18211a; --ink:#e9f1ea; --muted:#93a597; --line:#27342a;
+      --accent:#7bd47f; --accent-2:#a5d86a; --accent-ink:#0b1a0d; --shadow:0 1px 2px #0005, 0 6px 18px #0006;
+      --hero1:#17301b; --hero2:#0f1511;
+    }
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; font-family:"Segoe UI",system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--ink); line-height:1.45; }
+
+  header { padding:3.5rem 1rem 2rem; text-align:center; background:linear-gradient(180deg,var(--hero1),var(--hero2)); }
+  h1 { margin:0; font-size:clamp(1.9rem,5vw,2.8rem); letter-spacing:-.02em; }
+  h1 span { background:linear-gradient(90deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  p.sub { margin:.5rem 0 0; color:var(--muted); font-size:1.05rem; }
+
+  form { display:flex; max-width:620px; margin:1.75rem auto 0; background:var(--card); border:1px solid var(--line);
+    border-radius:999px; padding:.35rem; box-shadow:var(--shadow); transition:box-shadow .2s, border-color .2s; }
+  form:focus-within { border-color:var(--accent); box-shadow:0 0 0 4px #2e7d3226, var(--shadow); }
+  input { flex:1; min-width:0; padding:.7rem 1.1rem; font-size:1.05rem; border:0; outline:0; background:transparent; color:var(--ink); }
+  input::placeholder { color:var(--muted); }
+  button { font:inherit; cursor:pointer; }
+  form button { padding:.7rem 1.6rem; border:0; border-radius:999px; background:var(--accent); color:var(--accent-ink); font-weight:600; transition:transform .1s, filter .2s; }
+  form button:hover { filter:brightness(1.1); }
+  form button:active { transform:scale(.97); }
+
+  .quick { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; margin-top:1rem; }
+  .quick button, .chip { border:1px solid var(--line); background:var(--card); color:var(--ink); padding:.35rem .9rem; border-radius:999px; font-size:.9rem; transition:all .15s; }
+  .quick button:hover, .chip:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
+
+  .chips { display:flex; gap:.5rem; overflow-x:auto; padding:1.25rem 1rem .5rem; max-width:1150px; margin:0 auto; scrollbar-width:thin; }
+  .chip { white-space:nowrap; }
+  #status { max-width:1150px; margin:.75rem auto; padding:0 1rem; color:var(--muted); font-size:.95rem; min-height:1.5rem; }
+  #status.busy::before { content:""; display:inline-block; width:.9em; height:.9em; margin-right:.5em; vertical-align:-.1em;
+    border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  main { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:1.25rem; padding:.5rem 1rem 1.5rem; max-width:1150px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); cursor:pointer;
+    color:inherit; text-decoration:none; display:flex; flex-direction:column; position:relative; transition:transform .18s, box-shadow .18s; animation:in .35s both; }
+  .card:hover { transform:translateY(-4px); box-shadow:0 2px 4px #0002, 0 14px 28px #1b3a1f26; }
+  @keyframes in { from { opacity:0; transform:translateY(8px); } }
+  .card img, .card .ph { width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:var(--line); }
+  .card .ph { display:grid; place-items:center; font-size:3rem; background:linear-gradient(135deg,var(--hero1),var(--line)); }
+  .card .b { padding:.9rem 1rem 1.1rem; }
+  .card h3 { margin:0 0 .3rem; font-size:1.02rem; line-height:1.3; }
+  .card small { color:var(--muted); font-size:.85rem; }
+  .tag { position:absolute; top:.65rem; left:.65rem; background:#000b; color:#fff; font-size:.68rem; font-weight:600; letter-spacing:.03em;
+    text-transform:uppercase; padding:.2rem .6rem; border-radius:999px; backdrop-filter:blur(6px); }
+
+  #sites { max-width:1150px; margin:0 auto; padding:1rem 1rem 3rem; text-align:center; border-top:1px solid var(--line); }
+  #sites:empty { display:none; }
+  #sites small { display:block; margin-bottom:.5rem; color:var(--muted); }
+  #sites a { display:inline-block; margin:.2rem; padding:.35rem .85rem; border-radius:999px; border:1px solid var(--line); background:var(--card);
+    color:var(--ink); text-decoration:none; font-size:.85rem; transition:all .15s; }
+  #sites a:hover { border-color:var(--accent); color:var(--accent); }
+
+  dialog { max-width:680px; width:calc(100% - 2rem); max-height:90vh; border:0; border-radius:20px; background:var(--card); color:var(--ink);
+    padding:0; box-shadow:0 20px 60px #0007; overflow:auto; }
+  dialog[open] { animation:pop .22s; }
+  @keyframes pop { from { opacity:0; transform:scale(.96) translateY(10px); } }
+  dialog::backdrop { background:#0009; backdrop-filter:blur(3px); }
+  dialog > img { width:100%; height:260px; object-fit:cover; display:block; }
+  dialog .in { padding:1.4rem 1.6rem 1.6rem; }
+  dialog h2 { margin:0 0 .2rem; font-size:1.5rem; }
+  dialog small { color:var(--muted); }
+  dialog h3 { margin:1.4rem 0 .5rem; font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--accent); }
+  dialog ul { margin:0; padding-left:1.2rem; columns:2 200px; }
+  dialog li { margin-bottom:.25rem; break-inside:avoid; }
+  dialog pre { white-space:pre-wrap; font-family:inherit; line-height:1.65; margin:0; }
+  dialog a { color:var(--accent); font-weight:600; text-decoration:none; }
+  dialog a:hover { text-decoration:underline; }
+  dialog .actions { margin-top:1.4rem; display:flex; gap:1rem; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🥕 <span>Veggie Recipe Finder</span></h1>
+  <p class="sub">One search across several recipe sources — vegetarian only</p>
+  <form id="f">
+    <input id="q" placeholder="e.g. Italian, pizza, dessert" autofocus>
+    <button>Search</button>
+  </form>
+  <div class="quick" id="quick">
+    <button type="button">Italian</button><button type="button">Pizza</button><button type="button">Dessert</button>
+    <button type="button">Curry</button><button type="button">Pasta</button><button type="button">Soup</button>
+  </div>
+</header>
+<div class="chips" id="chips"></div>
+<div id="status">Loading recipes…</div>
+<div id="sites"></div>
+<main id="results"></main>
+<dialog id="dlg"></dialog>
+
+<script>
+const MEAT = /\b(chicken|beef|pork|lamb|mutton|goat|veal|venison|rabbit|turkey|duck|bacon|ham|sausages?|chorizo|pancetta|prosciutto|salami|pepperoni|mince|minced|steak|gelatin|gelatine|lard|suet|kidneys?|liver|oxtail|fish|salmon|tuna|cod|haddock|mackerel|sardines?|herring|trout|anchov(y|ies)|prawns?|shrimps?|crab|lobster|mussels?|clams?|oysters?|squid|scallops?|eel)\b/i;
+const BAD_CAT = /^(beef|chicken|lamb|pork|seafood|goat)$/i;
+
+// Sites without an open API: we only link to their own search pages.
+const SITES = [
+  ["Cookie and Kate", "https://cookieandkate.com/?s="],
+  ["Minimalist Baker", "https://minimalistbaker.com/?s="],
+  ["Budget Bytes", "https://www.budgetbytes.com/?s="],
+  ["Love & Lemons", "https://www.loveandlemons.com/?s="],
+  ["Serious Eats", "https://www.seriouseats.com/search?q="],
+  ["BBC Good Food", "https://www.bbcgoodfood.com/search?q=vegetarian+"],
+  ["Allrecipes", "https://www.allrecipes.com/search?q=vegetarian+"],
+  ["Veg Recipes of India", "https://www.vegrecipesofindia.com/?s="],
+  ["Simply Recipes", "https://www.simplyrecipes.com/search?q=vegetarian+"],
+  ["Epicurious", "https://www.epicurious.com/search?q=vegetarian+"],
+  ["Food Network", "https://www.foodnetwork.com/search/vegetarian-"],
+  ["Vegan Richa", "https://www.veganricha.com/?s="],
+];
+
+const SPOON_KEY = "3f14bd5a4dc04ce99eb6db0e282b2dd0";
+const store = { meal: [], dummy: [] };   // preloaded, filtered locally
+const cache = new Map();                 // id -> recipe for detail view
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const status = (t, busy) => {
+  const el = document.getElementById("status");
+  el.textContent = t; el.classList.toggle("busy", !!busy);
+};
+
+/* ---------- TheMealDB ---------- */
+function mealIngredients(m) {
+  const out = [];
+  for (let i = 1; i <= 20; i++) {
+    const ing = (m["strIngredient" + i] || "").trim();
+    if (ing) out.push(((m["strMeasure" + i] || "").trim() + " " + ing).trim());
+  }
+  return out;
+}
+async function loadMeals() {
+  let meals;
+  try { meals = JSON.parse(localStorage.getItem("mealsCache")); } catch {}
+  if (!meals) {
+    const pages = await Promise.all("abcdefghijklmnopqrstuvwxyz".split("").map(c =>
+      fetch("https://www.themealdb.com/api/json/v1/1/search.php?f=" + c)
+        .then(r => r.json()).then(d => d.meals || []).catch(() => [])));
+    meals = pages.flat();
+    try { localStorage.setItem("mealsCache", JSON.stringify(meals)); } catch {}
+  }
+  store.meal = meals.map(m => ({
+    id: "meal" + m.idMeal, source: "TheMealDB", title: m.strMeal, image: m.strMealThumb + "/preview",
+    bigImage: m.strMealThumb, area: m.strArea, category: m.strCategory, tags: m.strTags || "",
+    ingredients: mealIngredients(m), steps: m.strInstructions, video: m.strYoutube,
+  })).filter(r => !BAD_CAT.test(r.category) && !r.ingredients.some(i => MEAT.test(i)));
+}
+
+/* ---------- DummyJSON ---------- */
+async function loadDummy() {
+  const d = await fetch("https://dummyjson.com/recipes?limit=0").then(r => r.json());
+  store.dummy = d.recipes.map(m => ({
+    id: "dummy" + m.id, source: "DummyJSON", title: m.name, image: m.image, bigImage: m.image,
+    area: m.cuisine, category: (m.mealType || []).join(", "), tags: (m.tags || []).join(" "),
+    ingredients: m.ingredients, steps: m.instructions.join("\n"),
+  })).filter(r => !r.ingredients.some(i => MEAT.test(i)) && !MEAT.test(r.title));
+}
+
+/* ---------- live searches ---------- */
+async function searchWikibooks(term) {
+  const url = "https://en.wikibooks.org/w/api.php?action=query&format=json&origin=*&generator=search" +
+    "&gsrnamespace=102&gsrlimit=30&prop=pageimages|extracts&piprop=thumbnail&pithumbsize=300" +
+    "&exintro=1&explaintext=1&exlimit=max&exchars=400&gsrsearch=" + encodeURIComponent(term + " vegetarian");
+  const d = await fetch(url).then(r => r.json());
+  return Object.values(d.query?.pages || {}).sort((a, b) => a.index - b.index)
+    .filter(p => !/^Cookbook:(Ingredients|Recipes|Cuisine)/i.test(p.title) && !MEAT.test(p.title) &&
+      /vegetarian cuisine|vegan cuisine/i.test(p.extract || ""))
+    .map(p => ({
+      id: "wb" + p.pageid, source: "Wikibooks", title: p.title.replace(/^Cookbook:/, ""),
+      image: p.thumbnail?.source, area: "Wikibooks Cookbook", category: "",
+      link: "https://en.wikibooks.org/wiki/" + encodeURIComponent(p.title.replace(/ /g, "_")),
+    }));
+}
+async function searchSpoonacular(term, key) {
+  const d = await fetch("https://api.spoonacular.com/recipes/complexSearch?diet=vegetarian&number=24" +
+    "&addRecipeInformation=true&fillIngredients=true&query=" + encodeURIComponent(term) + "&apiKey=" + encodeURIComponent(key))
+    .then(r => r.json());
+  return (d.results || []).map(m => ({
+    id: "sp" + m.id, source: "Spoonacular", title: m.title, image: m.image, bigImage: m.image,
+    area: (m.cuisines || []).join(", "), category: (m.dishTypes || []).join(", "),
+    ingredients: (m.extendedIngredients || []).map(i => i.original),
+    steps: (m.analyzedInstructions?.[0]?.steps || []).map(s => s.step).join("\n"),
+    link: m.sourceUrl,
+  }));
+}
+
+/* ---------- API Ninjas ---------- */
+const ninjaKey = () => "t9ewt9aCfxpREmxVupyEnbzd4IV79KCxM6JkGrQk";
+async function searchNinjas(term) {
+  if (!ninjaKey()) return [];
+  const r = await fetch("https://api.api-ninjas.com/v1/recipe?query=" + encodeURIComponent(term), { headers: { "X-Api-Key": ninjaKey() } });
+  if (!r.ok) throw new Error("API Ninjas " + r.status);
+  return (await r.json()).map((m, i) => {
+    const ingredients = (m.ingredients || "").split("|").map(x => x.trim()).filter(Boolean);
+    return { id: "ninja" + i + term, source: "API Ninjas", title: m.title, area: "", category: m.servings || "",
+      ingredients, steps: m.instructions || "" };
+  }).filter(r => !MEAT.test(r.title) && !r.ingredients.some(i => MEAT.test(i)));
+}
+
+/* ---------- search + render ---------- */
+const matches = (r, words) => {
+  const hay = [r.title, r.area, r.category, r.tags, ...(r.ingredients || [])].join(" ").toLowerCase();
+  return words.every(w => hay.includes(w));
+};
+
+async function search(term) {
+  status("Searching all sources…", true);
+  const words = term.toLowerCase().split(/\s+/).filter(Boolean);
+  const live = [searchWikibooks(term), searchSpoonacular(term, SPOON_KEY), searchNinjas(term)];
+  const liveRes = (await Promise.allSettled(live)).flatMap(r => r.status === "fulfilled" ? r.value : []);
+  const hits = [...store.meal, ...store.dummy].filter(r => matches(r, words)).concat(liveRes);
+  hits.forEach(r => cache.set(r.id, r));
+  const sources = [...new Set(hits.map(h => h.source))].join(", ");
+  status(hits.length ? `${hits.length} results for “${term}” from ${sources}` : `Nothing found for “${term}”. Try another keyword or a site below.`);
+  document.getElementById("results").innerHTML = hits.map(r => {
+    const inner = `${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : `<div class="ph">🥗</div>`}
+      <span class="tag">${esc(r.source)}</span>
+      <div class="b"><h3>${esc(r.title)}</h3><small>${esc([r.area, r.category].filter(Boolean).join(" · "))}</small></div>`;
+    return r.steps || !r.link
+      ? `<div class="card" data-id="${esc(r.id)}">${inner}</div>`
+      : `<a class="card" href="${esc(r.link)}" target="_blank" rel="noopener">${inner}</a>`;
+  }).join("");
+  document.getElementById("sites").innerHTML = "<small>More sites (opens their search): </small>" +
+    SITES.map(([n, u]) => `<a href="${u}${encodeURIComponent(term)}" target="_blank" rel="noopener">${esc(n)} ↗</a>`).join("");
+}
+
+function show(id) {
+  const r = cache.get(id), dlg = document.getElementById("dlg");
+  dlg.innerHTML = `
+    ${r.bigImage ? `<img src="${esc(r.bigImage)}" alt="">` : ""}
+    <div class="in"><h2>${esc(r.title)}</h2>
+    <small>${esc([r.source, r.area, r.category].filter(Boolean).join(" · "))}</small>
+    <h3>Ingredients</h3><ul>${r.ingredients.map(i => `<li>${esc(i)}</li>`).join("")}</ul>
+    <h3>Instructions</h3><pre>${esc(r.steps)}</pre>
+    <div class="actions">
+    ${r.video ? `<a href="${esc(r.video)}" target="_blank" rel="noopener">▶ Watch video</a>` : ""}
+    ${r.link ? `<a href="${esc(r.link)}" target="_blank" rel="noopener">Original recipe ↗</a>` : ""}
+    <a href="#" id="close">Close</a></div></div>`;
+  dlg.showModal();
+  dlg.querySelector("#close").onclick = e => { e.preventDefault(); dlg.close(); };
+}
+
+document.getElementById("f").onsubmit = e => {
+  e.preventDefault();
+  const t = document.getElementById("q").value.trim();
+  if (t) search(t);
+};
+document.getElementById("chips").onclick = e => {
+  if (e.target.classList.contains("chip")) {
+    document.getElementById("q").value = e.target.textContent;
+    search(e.target.textContent);
+  }
+};
+document.getElementById("quick").onclick = e => {
+  if (e.target.tagName === "BUTTON") {
+    document.getElementById("q").value = e.target.textContent;
+    search(e.target.textContent);
+  }
+};
+document.getElementById("results").onclick = e => {
+  const c = e.target.closest("div.card");
+  if (c) show(c.dataset.id);
+};
+document.getElementById("dlg").onclick = e => { if (e.target.id === "dlg") e.target.close(); };
+
+(async () => {
+  await Promise.allSettled([loadMeals(), loadDummy()]);
+  const all = [...store.meal, ...store.dummy];
+  const chips = new Set();
+  all.forEach(r => { chips.add(r.area); (r.category || "").split(", ").forEach(c => chips.add(c)); });
+  document.getElementById("chips").innerHTML = [...chips].filter(Boolean).sort()
+    .map(c => `<button class="chip" type="button">${esc(c)}</button>`).join("");
+  status(`${all.length} vegetarian recipes preloaded. Searches also query Spoonacular, Wikibooks and API Ninjas.`);
+})();
+</script>
+</body>
+</html>
